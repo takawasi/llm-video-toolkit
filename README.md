@@ -81,6 +81,31 @@ python main.py caption -i input.mp4 -o output.srt --no-correct
 python main.py caption -i input.mp4 -o output.mp4 --burn --style "FontSize=32,Bold=1"
 ```
 
+### auto-tag: タイトル・タグ・説明文生成
+
+```bash
+# 基本
+python main.py tag -i input.mp4
+
+# ジャンル指定（より最適化された提案）
+python main.py tag -i input.mp4 --genre gaming
+python main.py tag -i input.mp4 --genre vlog
+python main.py tag -i input.mp4 --genre tech
+
+# 出力ファイル指定
+python main.py tag -i input.mp4 -o metadata.json
+```
+
+**出力例**:
+```json
+{
+  "titles": ["【衝撃】〇〇すぎた件", "〇〇してみた結果www", ...],
+  "tags": ["〇〇", "〇〇解説", "〇〇やってみた", ...],
+  "description": "この動画では〇〇について...",
+  "summary": "動画の要約"
+}
+```
+
 ---
 
 ## モジュール構成
@@ -90,7 +115,7 @@ python main.py caption -i input.mp4 -o output.mp4 --burn --style "FontSize=32,Bo
 | **ffmpeg-assistant** | 自然言語→FFmpegコマンド生成 | ✅ 完了 |
 | **clip-cutter** | ショート動画自動切り出し | ✅ 完了 |
 | **auto-caption** | Whisper字幕生成 + LLM校正 + 焼き込み | ✅ 完了 |
-| **auto-tag** | タグ・説明文・タイトル案生成 | 🚧 開発中 |
+| **auto-tag** | タグ・説明文・タイトル案生成 | ✅ 完了 |
 | **thumbnail-candidates** | サムネ素材出し + キャッチコピー案 | 🚧 開発中 |
 | **live-caption** | リアルタイム字幕 + OBS連携 | 📋 予定 |
 

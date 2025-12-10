@@ -173,14 +173,52 @@ def caption(input_file, output_file, burn, no_correct, language, style):
 
 
 @cli.command()
+@click.option("-i", "--input", "input_file", required=True, help="入力動画ファイル")
+@click.option("-o", "--output", "output_file", help="出力JSONファイル")
+@click.option("--genre", default="default",
+              type=click.Choice(["gaming", "vlog", "tech", "entertainment", "education", "music", "default"]),
+              help="動画ジャンル")
+@click.option("--language", default="ja", help="言語コード")
+def tag(input_file, output_file, genre, language):
+    """動画からタイトル案・タグ・説明文を自動生成
+
+    例: python main.py tag -i input.mp4
+        python main.py tag -i input.mp4 --genre gaming -o metadata.json
+    """
+    config = load_config()
+    llm_config = config.get("llm", {})
+
+    try:
+        from modules.auto_tag import AutoTag
+        llm = LLMWrapper(model=llm_config.get("model", "claude-sonnet-4-20250514"))
+        tagger = AutoTag(llm=llm)
+
+        result = tagger.generate(
+            input_file,
+            output_file=output_file,
+            genre=genre,
+            language=language,
+        )
+
+        # 結果を表示
+        tagger.print_result(result)
+        click.echo(click.style("\n成功!", fg="green"))
+
+    except Exception as e:
+        click.echo(click.style(f"エラー: {e}", fg="red"))
+        raise SystemExit(1)
+
+
+@cli.command()
 def info():
     """ツール情報を表示"""
-    click.echo("LLM Video Toolkit v0.2.0")
+    click.echo("LLM Video Toolkit v0.3.0")
     click.echo()
     click.echo("利用可能なコマンド:")
     click.echo("  ffmpeg   - 自然言語でFFmpegコマンドを生成・実行")
     click.echo("  clip     - 動画からバズりそうな箇所を自動切り出し")
     click.echo("  caption  - 字幕自動生成（SRT出力 or 焼き込み）")
+    click.echo("  tag      - タイトル案・タグ・説明文を自動生成")
     click.echo()
     click.echo("詳細: python main.py [COMMAND] --help")
 
