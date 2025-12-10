@@ -65,14 +65,34 @@ python main.py clip -i video.mp4 -n 3 --min-duration 20 --max-duration 45
 
 ---
 
+### auto-caption: 字幕自動生成
+
+```bash
+# SRT出力のみ
+python main.py caption -i input.mp4 -o output.srt
+
+# 字幕を動画に焼き込み
+python main.py caption -i input.mp4 -o output.mp4 --burn
+
+# LLM校正をスキップ（高速）
+python main.py caption -i input.mp4 -o output.srt --no-correct
+
+# スタイル指定
+python main.py caption -i input.mp4 -o output.mp4 --burn --style "FontSize=32,Bold=1"
+```
+
+---
+
 ## モジュール構成
 
 | モジュール | 機能 | 状態 |
 |-----------|------|------|
 | **ffmpeg-assistant** | 自然言語→FFmpegコマンド生成 | ✅ 完了 |
 | **clip-cutter** | ショート動画自動切り出し | ✅ 完了 |
-| **auto-caption** | Whisper字幕生成 + 焼き込み | 🚧 未実装 |
-| **live-caption** | リアルタイム字幕 + OBS連携 | 🚧 未実装 |
+| **auto-caption** | Whisper字幕生成 + LLM校正 + 焼き込み | ✅ 完了 |
+| **auto-tag** | タグ・説明文・タイトル案生成 | 🚧 開発中 |
+| **thumbnail-candidates** | サムネ素材出し + キャッチコピー案 | 🚧 開発中 |
+| **live-caption** | リアルタイム字幕 + OBS連携 | 📋 予定 |
 
 ---
 

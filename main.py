@@ -116,13 +116,71 @@ def clip(input_file, output_dir, num_clips, min_duration, max_duration, language
 
 
 @cli.command()
+@click.option("-i", "--input", "input_file", required=True, help="入力動画ファイル")
+@click.option("-o", "--output", "output_file", help="出力ファイル（SRTまたはMP4）")
+@click.option("--burn", is_flag=True, help="字幕を動画に焼き込む")
+@click.option("--no-correct", is_flag=True, help="LLM校正をスキップ")
+@click.option("--language", default="ja", help="言語コード")
+@click.option("--style", help="字幕スタイル（FontSize=24,Bold=1等）")
+def caption(input_file, output_file, burn, no_correct, language, style):
+    """動画から字幕を自動生成（SRT出力 or 焼き込み）
+
+    例: python main.py caption -i input.mp4 -o output.srt
+        python main.py caption -i input.mp4 -o output.mp4 --burn
+    """
+    config = load_config()
+    llm_config = config.get("llm", {})
+
+    try:
+        from modules.auto_caption import AutoCaption
+        llm = LLMWrapper(model=llm_config.get("model", "claude-sonnet-4-20250514"))
+        captioner = AutoCaption(llm=llm)
+
+        if burn:
+            # 焼き込みモード
+            if not output_file:
+                output_file = str(Path(input_file).with_stem(
+                    Path(input_file).stem + "_captioned"
+                ).with_suffix(".mp4"))
+
+            success = captioner.generate_and_burn(
+                input_file,
+                output_file,
+                language=language,
+                correct=not no_correct,
+                style=style,
+            )
+
+            if success:
+                click.echo(click.style("\n成功!", fg="green"))
+            else:
+                click.echo(click.style("\n失敗", fg="red"))
+                raise SystemExit(1)
+        else:
+            # SRT出力モード
+            segments, srt_file = captioner.generate(
+                input_file,
+                output_file=output_file,
+                language=language,
+                correct=not no_correct,
+            )
+            click.echo(click.style(f"\n成功! {len(segments)}セグメント", fg="green"))
+            click.echo(f"出力: {srt_file}")
+
+    except Exception as e:
+        click.echo(click.style(f"エラー: {e}", fg="red"))
+        raise SystemExit(1)
+
+
+@cli.command()
 def info():
     """ツール情報を表示"""
-    click.echo("LLM Video Toolkit v0.1.0")
+    click.echo("LLM Video Toolkit v0.2.0")
     click.echo()
     click.echo("利用可能なコマンド:")
-    click.echo("  ffmpeg  - 自然言語でFFmpegコマンドを生成・実行")
-    click.echo("  clip    - 動画からバズりそうな箇所を自動切り出し")
+    click.echo("  ffmpeg   - 自然言語でFFmpegコマンドを生成・実行")
+    click.echo("  clip     - 動画からバズりそうな箇所を自動切り出し")
+    click.echo("  caption  - 字幕自動生成（SRT出力 or 焼き込み）")
     click.echo()
     click.echo("詳細: python main.py [COMMAND] --help")
 
