@@ -1,0 +1,19 @@
+# LLM Video Toolkit - Dependencies
+
+# LLM
+anthropic>=0.18.0
+
+# Speech Recognition
+openai-whisper>=20231117
+
+# Video Processing (optional, for advanced features)
+# moviepy>=1.0.3
+
+# CLI
+click>=8.1.0
+
+# Config
+pyyaml>=6.0
+
+# Utils
+tqdm>=4.66.0

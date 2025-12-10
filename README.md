@@ -1,0 +1,123 @@
+# llm-video-toolkit
+
+LLM活用の動画制作・配信支援ツールキット
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+
+---
+
+## 特徴
+
+- **自然言語でFFmpegを操作** - 「720pに変換して」「音声を削除」など日本語で指示
+- **バズ箇所自動検出** - LLMが動画から「シェアされそうな部分」を特定
+- **配信者向け** - ショート動画切り出し、アーカイブ編集に最適化
+
+---
+
+## クイックスタート
+
+```bash
+# クローン
+git clone https://github.com/takawasi/llm-video-toolkit.git
+cd llm-video-toolkit
+
+# 仮想環境作成
+python3 -m venv venv
+source venv/bin/activate
+
+# 依存関係インストール
+pip install -r requirements.txt
+
+# 環境変数設定
+export ANTHROPIC_API_KEY="your-api-key"
+
+# 動作確認
+python main.py --help
+```
+
+---
+
+## 使い方
+
+### ffmpeg-assistant: 自然言語でFFmpegコマンド生成
+
+```bash
+# 基本
+python main.py ffmpeg "720pに変換して" -i input.mp4 -o output.mp4
+
+# 確認なしで実行
+python main.py ffmpeg "音声を削除" -i input.mp4 -o silent.mp4 -y
+
+# コマンド確認のみ（実行しない）
+python main.py ffmpeg "最初の30秒だけ切り出し" -i input.mp4 --dry-run
+```
+
+### clip-cutter: バズ箇所自動切り出し
+
+```bash
+# 5箇所自動切り出し
+python main.py clip -i long_video.mp4 -n 5 -o ./clips
+
+# 秒数指定
+python main.py clip -i video.mp4 -n 3 --min-duration 20 --max-duration 45
+```
+
+---
+
+## モジュール構成
+
+| モジュール | 機能 | 状態 |
+|-----------|------|------|
+| **ffmpeg-assistant** | 自然言語→FFmpegコマンド生成 | ✅ 完了 |
+| **clip-cutter** | ショート動画自動切り出し | ✅ 完了 |
+| **auto-caption** | Whisper字幕生成 + 焼き込み | 🚧 未実装 |
+| **live-caption** | リアルタイム字幕 + OBS連携 | 🚧 未実装 |
+
+---
+
+## 技術スタック
+
+| カテゴリ | 技術 |
+|---------|------|
+| 言語 | Python 3.11+ |
+| 動画処理 | FFmpeg |
+| 音声認識 | OpenAI Whisper |
+| LLM | Claude API (Anthropic) |
+
+---
+
+## 依存ライブラリ
+
+| ライブラリ | ライセンス | 用途 |
+|-----------|-----------|------|
+| [anthropic](https://github.com/anthropics/anthropic-sdk-python) | MIT | Claude API |
+| [openai-whisper](https://github.com/openai/whisper) | MIT | 音声認識 |
+| [click](https://github.com/pallets/click) | BSD-3-Clause | CLI |
+| [pyyaml](https://github.com/yaml/pyyaml) | MIT | 設定ファイル |
+
+---
+
+## 必要環境
+
+- Python 3.11+
+- FFmpeg（システムにインストール済み）
+- Anthropic API Key
+
+---
+
+## ライセンス
+
+MIT License - 詳細は [LICENSE](./LICENSE) を参照
+
+---
+
+## 作者
+
+- **TAKAWASI** - [GitHub](https://github.com/takawasi)
+
+---
+
+## 関連リンク
+
+- [紹介ページ](https://takawasi-social.com/llm-video-toolkit/) - 使い方・デモ

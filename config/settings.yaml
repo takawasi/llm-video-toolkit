@@ -1,0 +1,18 @@
+# LLM Video Toolkit - 設定ファイル
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-20250514
+  api_key_env: ANTHROPIC_API_KEY
+
+whisper:
+  model: base  # tiny, base, small, medium, large
+  language: ja
+
+ffmpeg:
+  path: ffmpeg  # or /usr/bin/ffmpeg
+
+output:
+  default_dir: ./output
+  video_format: mp4
+  video_codec: libx264
