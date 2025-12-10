@@ -106,6 +106,31 @@ python main.py tag -i input.mp4 -o metadata.json
 }
 ```
 
+### thumbnail-candidates: サムネ素材出し
+
+```bash
+# 基本（5枚抽出）
+python main.py thumbnail -i input.mp4 -o ./thumbnails
+
+# 枚数指定
+python main.py thumbnail -i input.mp4 -n 10
+
+# キャッチコピーのトーン指定
+python main.py thumbnail -i input.mp4 --tone funny      # ユーモア重視
+python main.py thumbnail -i input.mp4 --tone clickbait  # クリック誘発重視
+```
+
+**出力**:
+```
+./thumbnails/
+├── frame_01_01_32.jpg   # 1分32秒のフレーム
+├── frame_02_03_45.jpg
+├── ...
+└── captions.txt         # キャッチコピー案
+```
+
+※最終的なサムネイル作成は人間が行う想定（素材出しまでがAIの役割）
+
 ---
 
 ## モジュール構成
@@ -116,7 +141,7 @@ python main.py tag -i input.mp4 -o metadata.json
 | **clip-cutter** | ショート動画自動切り出し | ✅ 完了 |
 | **auto-caption** | Whisper字幕生成 + LLM校正 + 焼き込み | ✅ 完了 |
 | **auto-tag** | タグ・説明文・タイトル案生成 | ✅ 完了 |
-| **thumbnail-candidates** | サムネ素材出し + キャッチコピー案 | 🚧 開発中 |
+| **thumbnail-candidates** | サムネ素材出し + キャッチコピー案 | ✅ 完了 |
 | **live-caption** | リアルタイム字幕 + OBS連携 | 📋 予定 |
 
 ---

@@ -210,15 +210,57 @@ def tag(input_file, output_file, genre, language):
 
 
 @cli.command()
+@click.option("-i", "--input", "input_file", required=True, help="入力動画ファイル")
+@click.option("-o", "--output-dir", help="出力ディレクトリ（省略時は./thumbnails）")
+@click.option("-n", "--num-frames", default=5, help="抽出するフレーム数")
+@click.option("--tone", default="default",
+              type=click.Choice(["funny", "serious", "clickbait", "default"]),
+              help="キャッチコピーのトーン")
+@click.option("--language", default="ja", help="言語コード")
+def thumbnail(input_file, output_dir, num_frames, tone, language):
+    """サムネ候補フレームを抽出 + キャッチコピー案生成
+
+    例: python main.py thumbnail -i input.mp4 -o ./thumbnails
+        python main.py thumbnail -i input.mp4 -n 10 --tone clickbait
+    """
+    config = load_config()
+    llm_config = config.get("llm", {})
+
+    try:
+        from modules.thumbnail_candidates import ThumbnailCandidates
+        llm = LLMWrapper(model=llm_config.get("model", "claude-sonnet-4-20250514"))
+        extractor = ThumbnailCandidates(llm=llm)
+
+        results = extractor.extract(
+            input_file,
+            output_dir=output_dir,
+            num_frames=num_frames,
+            language=language,
+            tone=tone,
+        )
+
+        # 結果を表示
+        extractor.print_result(results)
+
+        success_count = len([r for r in results if r.get("frame")])
+        click.echo(click.style(f"\n成功! {success_count}フレーム抽出", fg="green"))
+
+    except Exception as e:
+        click.echo(click.style(f"エラー: {e}", fg="red"))
+        raise SystemExit(1)
+
+
+@cli.command()
 def info():
     """ツール情報を表示"""
-    click.echo("LLM Video Toolkit v0.3.0")
+    click.echo("LLM Video Toolkit v0.4.0")
     click.echo()
     click.echo("利用可能なコマンド:")
-    click.echo("  ffmpeg   - 自然言語でFFmpegコマンドを生成・実行")
-    click.echo("  clip     - 動画からバズりそうな箇所を自動切り出し")
-    click.echo("  caption  - 字幕自動生成（SRT出力 or 焼き込み）")
-    click.echo("  tag      - タイトル案・タグ・説明文を自動生成")
+    click.echo("  ffmpeg    - 自然言語でFFmpegコマンドを生成・実行")
+    click.echo("  clip      - 動画からバズりそうな箇所を自動切り出し")
+    click.echo("  caption   - 字幕自動生成（SRT出力 or 焼き込み）")
+    click.echo("  tag       - タイトル案・タグ・説明文を自動生成")
+    click.echo("  thumbnail - サムネ候補フレーム抽出 + キャッチコピー案")
     click.echo()
     click.echo("詳細: python main.py [COMMAND] --help")
 
