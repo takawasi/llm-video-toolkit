@@ -131,6 +131,63 @@ python main.py thumbnail -i input.mp4 --tone clickbait  # クリック誘発重�
 
 ※最終的なサムネイル作成は人間が行う想定（素材出しまでがAIの役割）
 
+### archive-highlight: 配信アーカイブからハイライト抽出
+
+```bash
+# 基本（5クリップ抽出）
+python main.py highlight -i archive.mp4 -o ./highlights
+
+# コメントログ連携（より精度向上）
+python main.py highlight -i archive.mp4 -c comments.json -n 10
+
+# クリップ長さ指定
+python main.py highlight -i archive.mp4 -n 5 --duration 90
+```
+
+**出力**:
+```
+./highlights/
+├── highlight_01_15m30s_score3.5.mp4  # 15分30秒地点、スコア3.5
+├── highlight_02_42m15s_score3.0.mp4
+├── ...
+└── timestamps.txt  # YouTubeタイムスタンプ用
+```
+
+### live-caption: リアルタイム字幕（OBS連携）
+
+```bash
+# OBS起動後
+python main.py live-caption --source "字幕"
+
+# モデル・ポート指定
+python main.py live-caption --source "字幕" --model small --obs-port 4455
+
+# パスワード設定時
+python main.py live-caption --source "字幕" --obs-password "your-password"
+```
+
+※OBS側で「字幕」という名前のテキストソースを作成しておく
+
+**必要設定**:
+- OBS Studio 28以降（WebSocket 5.x対応）
+- OBS側でWebSocketサーバー有効化（設定→WebSocketサーバー設定）
+
+### stream-digest: ダイジェスト生成
+
+```bash
+# 基本（10ハイライトを連結）
+python main.py digest -i archive.mp4 -o digest.mp4
+
+# タイトルカード付き
+python main.py digest -i archive.mp4 -o digest.mp4 --title "12/12 配信ダイジェスト"
+
+# トランジション追加（処理時間増加）
+python main.py digest -i archive.mp4 -o digest.mp4 --title "配信ダイジェスト" --transition
+
+# コメントログ連携
+python main.py digest -i archive.mp4 -c comments.json -n 15
+```
+
 ---
 
 ## モジュール構成
@@ -142,7 +199,9 @@ python main.py thumbnail -i input.mp4 --tone clickbait  # クリック誘発重�
 | **auto-caption** | Whisper字幕生成 + LLM校正 + 焼き込み | ✅ 完了 |
 | **auto-tag** | タグ・説明文・タイトル案生成 | ✅ 完了 |
 | **thumbnail-candidates** | サムネ素材出し + キャッチコピー案 | ✅ 完了 |
-| **live-caption** | リアルタイム字幕 + OBS連携 | 📋 予定 |
+| **archive-highlight** | 配信アーカイブからハイライト自動抽出 | ✅ 完了 |
+| **live-caption** | リアルタイム字幕 + OBS連携 | ✅ 完了 |
+| **stream-digest** | ダイジェスト動画自動生成 | ✅ 完了 |
 
 ---
 
@@ -163,8 +222,11 @@ python main.py thumbnail -i input.mp4 --tone clickbait  # クリック誘発重�
 |-----------|-----------|------|
 | [anthropic](https://github.com/anthropics/anthropic-sdk-python) | MIT | Claude API |
 | [openai-whisper](https://github.com/openai/whisper) | MIT | 音声認識 |
+| [faster-whisper](https://github.com/guillaumekln/faster-whisper) | MIT | 高速Whisper（live-caption用） |
 | [click](https://github.com/pallets/click) | BSD-3-Clause | CLI |
 | [pyyaml](https://github.com/yaml/pyyaml) | MIT | 設定ファイル |
+| [websocket-client](https://github.com/websocket-client/websocket-client) | Apache-2.0 | OBS WebSocket |
+| [pyaudio](https://people.csail.mit.edu/hubert/pyaudio/) | MIT | 音声キャプチャ |
 
 ---
 

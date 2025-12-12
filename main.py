@@ -251,16 +251,163 @@ def thumbnail(input_file, output_dir, num_frames, tone, language):
 
 
 @cli.command()
+@click.option("-i", "--input", "input_file", required=True, help="配信アーカイブ動画")
+@click.option("-o", "--output-dir", default="./highlights", help="出力ディレクトリ")
+@click.option("-c", "--comments", "comment_log", help="コメントログ（JSON/CSV）")
+@click.option("-n", "--num-clips", default=5, help="抽出クリップ数")
+@click.option("--duration", default=60, help="クリップの長さ（秒）")
+def highlight(input_file, output_dir, comment_log, num_clips, duration):
+    """配信アーカイブからハイライトを自動抽出
+
+    音声解析（音量ピーク・笑い声）とコメントログ（急増箇所）を
+    組み合わせて、盛り上がった箇所を自動検出・切り出し。
+
+    例: python main.py highlight -i archive.mp4 -o ./highlights
+        python main.py highlight -i archive.mp4 -c comments.json -n 10
+    """
+    try:
+        from modules.archive_highlight import extract_highlights
+
+        click.echo(f"解析中: {input_file}")
+        if comment_log:
+            click.echo(f"コメントログ: {comment_log}")
+
+        result = extract_highlights(
+            input_file,
+            output_dir,
+            comment_log=comment_log,
+            num_clips=num_clips,
+            clip_duration=duration,
+        )
+
+        click.echo(click.style(f"\n成功! {len(result['clips'])}クリップ生成", fg="green"))
+        click.echo(f"\n生成されたクリップ:")
+        for clip in result['clips']:
+            click.echo(f"  {clip}")
+        click.echo(f"\nタイムスタンプ: {result['timestamps']}")
+
+    except Exception as e:
+        click.echo(click.style(f"エラー: {e}", fg="red"))
+        raise SystemExit(1)
+
+
+@cli.command("live-caption")
+@click.option("--obs-host", default="localhost", help="OBS WebSocketホスト")
+@click.option("--obs-port", default=4455, help="OBS WebSocketポート")
+@click.option("--obs-password", default="", help="OBS WebSocketパスワード")
+@click.option("--source", default="字幕", help="OBSテキストソース名")
+@click.option("--model", default="base", help="Whisperモデル（tiny/base/small/medium/large）")
+@click.option("--language", default="ja", help="言語コード")
+def live_caption(obs_host, obs_port, obs_password, source, model, language):
+    """リアルタイム字幕をOBSに送信
+
+    マイク入力をWhisperでリアルタイム認識し、
+    OBSのテキストソースに字幕を表示。
+
+    例: python main.py live-caption --source "字幕テキスト"
+        python main.py live-caption --model small --obs-password secret
+    """
+    try:
+        from modules.live_caption import LiveCaptionManager
+
+        manager = LiveCaptionManager(
+            obs_host=obs_host,
+            obs_port=obs_port,
+            obs_password=obs_password,
+            source_name=source,
+            whisper_model=model,
+            language=language,
+        )
+
+        click.echo(f"OBS接続中: {obs_host}:{obs_port}")
+        click.echo(f"テキストソース: {source}")
+        click.echo(f"Whisperモデル: {model}")
+        click.echo()
+
+        if not manager.start():
+            click.echo(click.style("OBS接続失敗", fg="red"))
+            raise SystemExit(1)
+
+        click.echo(click.style("リアルタイム字幕開始！", fg="green"))
+        click.echo("Ctrl+C で停止")
+        click.echo()
+
+        try:
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            click.echo("\n停止中...")
+            manager.stop()
+            click.echo("完了")
+
+    except ImportError as e:
+        click.echo(click.style(f"依存関係エラー: {e}", fg="red"))
+        click.echo("必要: pip install faster-whisper pyaudio websocket-client")
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(click.style(f"エラー: {e}", fg="red"))
+        raise SystemExit(1)
+
+
+@cli.command()
+@click.option("-i", "--input", "input_file", required=True, help="配信アーカイブ動画")
+@click.option("-o", "--output", "output_file", default="./digest.mp4", help="出力パス")
+@click.option("-c", "--comments", "comment_log", default=None, help="コメントログ（JSON/CSV）")
+@click.option("-n", "--num-clips", default=10, help="ハイライト数")
+@click.option("--duration", default=60, help="各クリップの長さ（秒）")
+@click.option("--title", default=None, help="タイトルカードテキスト")
+@click.option("--transition/--no-transition", default=False, help="トランジション追加")
+def digest(input_file, output_file, comment_log, num_clips, duration, title, transition):
+    """配信アーカイブからダイジェスト動画を生成
+
+    ハイライト箇所を自動抽出し、連結してダイジェスト動画を作成。
+    タイトルカードやトランジション効果もオプションで追加可能。
+
+    例: python main.py digest -i archive.mp4 -o digest.mp4
+        python main.py digest -i archive.mp4 --title "配信ダイジェスト" --transition
+    """
+    try:
+        from modules.stream_digest import build_digest
+
+        click.echo(f"ダイジェスト生成中: {input_file}")
+        click.echo(f"ハイライト数: {num_clips}")
+        if title:
+            click.echo(f"タイトル: {title}")
+        if transition:
+            click.echo("トランジション: 有効")
+
+        result = build_digest(
+            input_file, output_file,
+            comment_log=comment_log,
+            num_highlights=num_clips,
+            clip_duration=duration,
+            title=title,
+            with_transition=transition
+        )
+
+        click.echo(click.style(f"\n成功!", fg="green"))
+        click.echo(f"出力: {result}")
+
+    except Exception as e:
+        click.echo(click.style(f"エラー: {e}", fg="red"))
+        raise SystemExit(1)
+
+
+@cli.command()
 def info():
     """ツール情報を表示"""
-    click.echo("LLM Video Toolkit v0.4.0")
+    click.echo("LLM Video Toolkit v0.5.0")
     click.echo()
     click.echo("利用可能なコマンド:")
-    click.echo("  ffmpeg    - 自然言語でFFmpegコマンドを生成・実行")
-    click.echo("  clip      - 動画からバズりそうな箇所を自動切り出し")
-    click.echo("  caption   - 字幕自動生成（SRT出力 or 焼き込み）")
-    click.echo("  tag       - タイトル案・タグ・説明文を自動生成")
-    click.echo("  thumbnail - サムネ候補フレーム抽出 + キャッチコピー案")
+    click.echo("  ffmpeg       - 自然言語でFFmpegコマンドを生成・実行")
+    click.echo("  clip         - 動画からバズりそうな箇所を自動切り出し")
+    click.echo("  caption      - 字幕自動生成（SRT出力 or 焼き込み）")
+    click.echo("  tag          - タイトル案・タグ・説明文を自動生成")
+    click.echo("  thumbnail    - サムネ候補フレーム抽出 + キャッチコピー案")
+    click.echo("  highlight    - 配信アーカイブからハイライト自動抽出")
+    click.echo("  digest       - 配信アーカイブからダイジェスト動画生成")
+    click.echo("  live-caption - リアルタイム字幕（Whisper + OBS連携）")
     click.echo()
     click.echo("詳細: python main.py [COMMAND] --help")
 
